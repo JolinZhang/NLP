@@ -9,26 +9,23 @@ import java.util.*;
 /**
  * Created by Jonelezhang on 1/29/17.
  */
-public class Bigram {
-    String[] text;
-    HashSet<String> types;
-    Hashtable<String, Integer> typesCount;
-    int[][] counts;
-    ArrayList<String> title;
-    Hashtable<String, Integer> countsTable;
+public class ReadFile {
+    public ArrayList<String> title;
+    public int[][] counts;
+    public Hashtable<String, Integer> countsTable;
 
-    //read file keep all word and .
-    public void readFile(){
+    //read file keep all word
+    public String[] readFile(String route){
         BufferedReader file = null;
         //read file
-        String path = Bigram.class.getClassLoader().getResource("Corpus.txt").getPath();
+        String path = ReadFile.class.getClassLoader().getResource(route).getPath();
         try{
             file = new BufferedReader(new FileReader(path));
         }catch (Exception e){
             System.out.print("read file failed");
         }
 
-        //keep all word in content.
+        //keep all word in content, do not include any other characters.
         String line ="";
         StringBuilder content= new StringBuilder();
         try{
@@ -40,59 +37,60 @@ public class Bigram {
 
         }
         //split by space keep all word in text array.
-        text = String.valueOf(content).split("\\s+");
+        String[] text = String.valueOf(content).split("\\s+");
 //                for(String s: text){
 //            System.out.println(s);
 //        }
-
+        return text;
     }
 
-    //get types all distinct word
-    public void types(String[] text){
-        types = new HashSet<String>();
-        typesCount = new Hashtable<String, Integer>();
+
+    //get types all distinct word and the counts for all distinct word
+    public HashMap<String, Integer> types(String[] text){
+        HashMap<String, Integer> typesCount = new HashMap<String, Integer>();
         for(String s: text){
-            if(!types.contains(s) && s.length()!=0){
-                types.add(s);
+            if(!typesCount.containsKey(s) && s.length()!=0){
                 typesCount.put(s,1);
-            }else if(types.contains(s)){
+            }else if(typesCount.containsKey(s)){
                 typesCount.put(s, typesCount.get(s)+1);
             }
         }
-//        for(String s: types){
-//            System.out.println(s);
-//        }
-//
 //        for(Map.Entry<String, Integer> entry: typesCount.entrySet()){
 //            System.out.print(entry.getKey()+" ");
 //            System.out.print(entry.getValue()+" ");
 //            System.out.println();
 //        }
+        return typesCount;
     }
 
 
-    //get count for pair
-    public void slideTwo(String[] text){
+
+    //get title and counts size info
+    public void createTable(HashMap<String, Integer> typesCount){
+        Set<String> types = typesCount.keySet();
         int typeNum = types.size();
         //define the counts array.
         counts = new int[typeNum][typeNum];
-        Hashtable<String, Integer> typeTable = new Hashtable<String, Integer>();
-        //keep counts pair info;
-        countsTable = new Hashtable<String, Integer>();
+        //keep title info
         title = new ArrayList<String>();
         //keep the types and their id in typeTable Hashtable.
         int id =0;
         for(String s: types){
-            typeTable.put(s, id);
             title.add(s);
             id++;
         }
+    }
 
+
+
+    //get count for pair
+    public void slideTwo(String[] text, ArrayList<String> title){
+        //keep counts pair info;
+        countsTable = new Hashtable<String, Integer>();
         int tokenNum = text.length;
         String token1 = "";
         String token2 = "";
         int i =0;
-
         while(i< tokenNum) {
             if (tokenNum > 0) {
                 token1 = text[i];
@@ -104,21 +102,74 @@ public class Bigram {
                     i++;
                     break;
                 }
-                int x = typeTable.get(token1);
-                int y = typeTable.get(token2);
+                int x = title.indexOf(token1);
+                int y = title.indexOf(token2);
                 counts[x][y] += 1;
                 //write pair into count table
                 countsTable.put(token1+" "+token2, counts[x][y]);
-
-
                 token1 = token2;
                 i++;
-
-
             }
         }
 
     }
+
+    public void slideTwoTest(String[] text, ArrayList<String> title, Hashtable<String, Integer> countsTable){
+        //keep counts pair info;
+        int tokenNum = text.length;
+        String token1 = "";
+        String token2 = "";
+        int i =0;
+        while(i< tokenNum) {
+            if (tokenNum > 0) {
+                token1 = text[i];
+                i++;
+            }
+            while (i < tokenNum) {
+                token2 = text[i];
+                if (token2.length() == 0) {
+                    i++;
+                    break;
+                }
+                int x = title.indexOf(token1);
+                int y = title.indexOf(token2);
+                if(countsTable.containsKey(token1+" "+token2)) {
+                    counts[x][y] = countsTable.get(token1 + " " + token2);
+                }
+                token1 = token2;
+                i++;
+            }
+        }
+    }
+
+    public float slidTwoProb(String[] text, float[][] prob, ArrayList<String> title){
+        //keep counts pair info;
+        float probability = (float) 0.5;
+        int tokenNum = text.length;
+        String token1 = "";
+        String token2 = "";
+        int i =0;
+        while(i< tokenNum) {
+            if (tokenNum > 0) {
+                token1 = text[i];
+                i++;
+            }
+            while (i < tokenNum) {
+                token2 = text[i];
+                if (token2.length() == 0) {
+                    i++;
+                    break;
+                }
+                int x = title.indexOf(token1);
+                int y = title.indexOf(token2);
+                probability *= prob[x][y];
+                token1 = token2;
+                i++;
+            }
+        }
+        return probability;
+    }
+
 
 
     public void outputPair(Hashtable<String ,Integer> countsTable){
@@ -186,24 +237,4 @@ public class Bigram {
         }
     }
 
-
-
-    public void run(){
-        readFile();
-        types(text);
-        slideTwo(text);
-        outputPair(countsTable);
-//        NoSmoothing noSmoothing = new NoSmoothing();
-//        noSmoothing.noSmoothing(counts,title,typesCount);
-//        LaplaceSmoothing laplaceSmoothing = new LaplaceSmoothing();
-//        laplaceSmoothing.laplaceSmoothing(counts,title,typesCount);
-//        GoodTuring goodTuring = new GoodTuring();
-//        goodTuring.goodTuring(counts, title, typesCount);
-    }
-
-
-    public static void main(String[] args){
-        Bigram bigram = new Bigram();
-        bigram.run();
-    }
 }

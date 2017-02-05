@@ -1,21 +1,13 @@
-import com.sun.corba.se.impl.orbutil.graph.Graph;
-import com.sun.prism.Graphics;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 /**
  * Created by Jonelezhang on 1/30/17.
  */
 public class NoSmoothing {
-    public void noSmoothing(int[][] counts,  ArrayList<String> title,  Hashtable<String, Integer> typesCount) {
-
-
-        //print counts
-        Bigram bigram = new Bigram();
-        System.out.println("counts for noSmoothing");
-        bigram.print(counts, title);
+    public void noSmoothing(String[] text, int[][] counts,  ArrayList<String> title,  HashMap<String, Integer> typesCount) {
 
         float[][] result = new float[title.size()][title.size()];
         DecimalFormat df = new DecimalFormat("#.#####");
@@ -25,10 +17,19 @@ public class NoSmoothing {
                 result[i][j] = Float.parseFloat(df.format(counts[i][j] / devide));
             }
         }
+
+        //print counts
+        ReadFile readFile = new ReadFile();
+        System.out.println("counts for noSmoothing");
+        readFile.print(counts, title);
+
         //print probabilities
         System.out.println("probabilities for nSmoothing");
-        bigram.print(result, title);
+        readFile.print(result, title);
 
+        //print sentence probabilities
+        float senPro = readFile.slidTwoProb(text, result, title);
+        System.out.println("probabilities for sentence of nSmoothing:" + senPro);
 
     }
 }
